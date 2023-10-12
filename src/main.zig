@@ -6,19 +6,17 @@ const getStdOut = std.io.getStdOut;
 const Board = @import("./board.zig");
 
 pub fn main() !void {
+    const stdout = getStdOut().writer();
     var board = Board.init();
 
-    for (0..9) |i| {
-        for (0..9) |j| {
-            board.grid[i][j].val = @truncate(j);
-        }
-    }
+    const values = "123456789" ** 9;
+
+    Board.set_board_string(&board, values);
 
     var gpa = GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     var list = try Board.printBoard(allocator, board);
     defer list.deinit();
 
-    const stdout = getStdOut().writer();
     try stdout.print("{s}", .{list.items});
 }

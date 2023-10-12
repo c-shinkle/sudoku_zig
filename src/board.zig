@@ -12,24 +12,12 @@ const Board = struct {
 };
 
 pub fn init() Board {
-    const cell = Cell {
+    const cell = Cell{
         .val = 0,
-        .poss = [9]bool{true, true, true, true, true, true, true, true, true},
+        .poss = .{true} ** 9,
     };
-    var board = Board {
-        .grid = undefined
-    };
-    var i: u8 = 0;
-    while (i < 9) {
-        var j: u8 = 0;
-        while (j < 9) {
-            board.grid[i][j] = cell;
-            j += 1;
-        }
-        i += 1;
-    }
 
-    return board;
+    return Board{ .grid = .{.{cell} ** 9} ** 9 };
 }
 
 pub fn printBoard(allocator: Allocator, board: Board) !ArrayList(u8) {
@@ -39,14 +27,14 @@ pub fn printBoard(allocator: Allocator, board: Board) !ArrayList(u8) {
     try addIthRow(board.grid[1], &chars);
     try addIthRow(board.grid[2], &chars);
 
-    try chars.appendSlice("--- --- ---\n");
+    try chars.appendSlice("---+---+---\n");
 
     try addIthRow(board.grid[3], &chars);
     try addIthRow(board.grid[4], &chars);
     try addIthRow(board.grid[5], &chars);
 
-    try chars.appendSlice("--- --- ---\n");
-    
+    try chars.appendSlice("---+---+---\n");
+
     try addIthRow(board.grid[6], &chars);
     try addIthRow(board.grid[7], &chars);
     try addIthRow(board.grid[8], &chars);
@@ -64,12 +52,22 @@ fn addIthRow(row: [9]Cell, chars: *ArrayList(u8)) !void {
     try chars.append(row[3].val + 48);
     try chars.append(row[4].val + 48);
     try chars.append(row[5].val + 48);
- 
+
     try chars.append('|');
-     
+
     try chars.append(row[6].val + 48);
     try chars.append(row[7].val + 48);
     try chars.append(row[8].val + 48);
 
     try chars.append('\n');
+}
+
+pub fn set_board_string(board: *Board, values: *const [81:0]u8) void {
+    var i: u32 = 0;
+    for (0..9) |row| {
+        for (0..9) |col| {
+            board.grid[row][col].val = values[i] - '0';
+            i += 1;
+        }
+    }
 }
