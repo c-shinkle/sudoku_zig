@@ -2,6 +2,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
+const BOARD_SIZE: u32 = 9;
+
 const Cell = struct {
     val: u8,
     poss: [9]bool,
@@ -62,12 +64,24 @@ fn addIthRow(row: [9]Cell, chars: *ArrayList(u8)) !void {
     try chars.append('\n');
 }
 
-pub fn set_board_string(board: *Board, values: *const [81:0]u8) void {
-    var i: u32 = 0;
-    for (0..9) |row| {
-        for (0..9) |col| {
-            board.grid[row][col].val = values[i] - '0';
-            i += 1;
+pub fn set_board_string(board: *Board, values: []const u8) void {
+    var iter = CharIterator{ .string = values };
+    for (0..BOARD_SIZE) |row| {
+        for (0..BOARD_SIZE) |col| {
+            const val = iter.next() orelse @panic("Should be exactly 81 chars in string slice.");
+            board.grid[row][col].val = val - '0';
         }
     }
 }
+
+const CharIterator = struct {
+    string: []const u8,
+    index: u32 = 0,
+    fn next(self: *CharIterator) ?u8 {
+        if (self.index >= self.string.len) {
+            return null;
+        }
+        self.index += 1;
+        return self.string[self.index - 1];
+    }
+};
