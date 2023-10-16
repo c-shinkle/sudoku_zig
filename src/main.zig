@@ -7,14 +7,12 @@ const Board = @import("./board.zig");
 
 pub fn main() !void {
     const stdout = getStdOut().writer();
-    var board = Board.init();
-
-    const values = "123456789" ** 9;
-
-    Board.set_board_string(&board, values);
-
     var gpa = GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+
+    var board = Board.init();
+    try Board.setBoardByFile(&board, allocator, "./res/board.txt");
+
     var list = try Board.printBoard(allocator, board);
     defer list.deinit();
 

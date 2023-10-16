@@ -6,20 +6,20 @@ const BOARD_SIZE: u32 = 9;
 
 const Cell = struct {
     val: u8,
-    poss: [9]bool,
+    poss: [BOARD_SIZE]bool,
 };
 
 const Board = struct {
-    grid: [9][9]Cell,
+    grid: [BOARD_SIZE][BOARD_SIZE]Cell,
 };
 
 pub fn init() Board {
     const cell = Cell{
         .val = 0,
-        .poss = .{true} ** 9,
+        .poss = .{true} ** BOARD_SIZE,
     };
 
-    return Board{ .grid = .{.{cell} ** 9} ** 9 };
+    return Board{ .grid = .{.{cell} ** BOARD_SIZE} ** BOARD_SIZE };
 }
 
 pub fn printBoard(allocator: Allocator, board: Board) !ArrayList(u8) {
@@ -44,7 +44,7 @@ pub fn printBoard(allocator: Allocator, board: Board) !ArrayList(u8) {
     return chars;
 }
 
-fn addIthRow(row: [9]Cell, chars: *ArrayList(u8)) !void {
+fn addIthRow(row: [BOARD_SIZE]Cell, chars: *ArrayList(u8)) !void {
     try chars.append(row[0].val + 48);
     try chars.append(row[1].val + 48);
     try chars.append(row[2].val + 48);
@@ -64,7 +64,7 @@ fn addIthRow(row: [9]Cell, chars: *ArrayList(u8)) !void {
     try chars.append('\n');
 }
 
-pub fn set_board_string(board: *Board, values: []const u8) void {
+pub fn setBoardByString(board: *Board, values: []const u8) void {
     var iter = CharIterator{ .string = values };
     for (0..BOARD_SIZE) |row| {
         for (0..BOARD_SIZE) |col| {
@@ -85,3 +85,19 @@ const CharIterator = struct {
         return self.string[self.index - 1];
     }
 };
+
+pub fn setBoardByFile(board: *Board, allocator: Allocator, path: []const u8) !void {
+    var file = try std.fs.cwd().openFile(path, .{});
+    defer file.close();
+    var reader = file.reader();
+
+    var values = ArrayList(u8).init(allocator);
+    var buffer: [10]u8 = undefined;
+    while (try reader.readUntilDelimiterOrEof(&buffer, '\n')) |line| {
+        if (@import("builtin").os.tag == .windows) {
+            line = std.mem.trimRight(u8, line, "\r");
+        }
+        try values.appendSlice(line);
+    }
+    setBoardByString(board, values.items);
+}
