@@ -1,4 +1,7 @@
 const std = @import("std");
+const fs = std.fs;
+const cwd = fs.cwd;
+const OpenMode = fs.File.OpenMode;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
@@ -87,13 +90,14 @@ const CharIterator = struct {
 };
 
 pub fn setBoardByFile(board: *Board, allocator: Allocator, path: []const u8) !void {
-    var file = try std.fs.cwd().openFile(path, .{});
+    var file = try cwd().openFile(path, .{ .mode = OpenMode.read_only });
     defer file.close();
+    var values = ArrayList(u8).init(allocator);
+    defer values.deinit();
+
     var reader = file.reader();
 
-    var values = ArrayList(u8).init(allocator);
-    var buffer: [10]u8 = undefined;
-    while (try reader.readUntilDelimiterOrEof(&buffer, '\n')) |line| {
+    while (try reader.readUntilDelimiterOrEofAlloc(allocator, '\n', 10)) |line| {
         if (@import("builtin").os.tag == .windows) {
             line = std.mem.trimRight(u8, line, "\r");
         }
