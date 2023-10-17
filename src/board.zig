@@ -109,4 +109,83 @@ pub const Board = struct {
         }
         self.setBoardByString(values.items);
     }
+
+    pub fn setAllPoss(self: *Self) void {
+        for (0..BOARD_SIZE) |row| {
+            for (0..BOARD_SIZE) |col| {
+                //update row
+                for (0..BOARD_SIZE) |i| {
+                    var cell = self.grid[row][i];
+                    if (cell.isBlank()) {
+                        self.grid[row][col].poss[cell.val - 1] = false;
+                    }
+                }
+                //update col
+                for (0..BOARD_SIZE) |i| {
+                    var cell = self.grid[i][col];
+                    if (cell.isBlank()) {
+                        self.grid[row][col].poss[cell.val - 1] = false;
+                    }
+                }
+                //update box
+                var box_row = row / 3;
+                var box_col = col / 3;
+                for (0..BOARD_SIZE) |i| {
+                    const grid_row = box_row * 3 + (i / 3);
+                    const grid_col = box_col * 3 + (i % 3);
+                    var cell = self.grid[grid_row][grid_col];
+                    if (cell.isBlank()) {
+                        self.grid[row][col].poss[cell.val - 1] = false;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn findFewestPoss(self: *Self) ?struct { u32, u32 } {
+        var smallestCount: u32 = 10;
+        var fewestSoFar = null;
+        for (0..BOARD_SIZE) |row| {
+            for (0..BOARD_SIZE) |col| {
+                const cell = self.grid[row][col];
+                if (cell.isBlank()) {
+                    var count: u32 = 0;
+                    inline for (cell.poss) |p| count += @intFromBool(p);
+                    if (smallestCount > count) {
+                        smallestCount = count;
+                        fewestSoFar = .{ row, col };
+                    }
+                }
+            }
+        }
+        return fewestSoFar;
+    }
+
+    pub fn updateAffectedPoss(self: *Self, row: usize, col: usize, val: u8) void {
+        //update row
+        for (0..BOARD_SIZE) |i| {
+            var cell = self.grid[row][i];
+            if (cell.isBlank()) {
+                cell.poss[val - 1] = false;
+            }
+        }
+        //update col
+        for (0..BOARD_SIZE) |i| {
+            var cell = self.grid[i][col];
+            if (cell.isBlank()) {
+                cell.poss[val - 1] = false;
+            }
+        }
+        //update box
+        var box_row = row / 3;
+        var box_col = col / 3;
+        for (0..BOARD_SIZE) |i| {
+            const grid_row = box_row * 3 + (i / 3);
+            const grid_col = box_col * 3 + (i % 3);
+            var cell = self.grid[grid_row][grid_col];
+            if (cell.isBlank()) {
+                cell.poss[val - 1] = false;
+            }
+        }
+    }
 };
