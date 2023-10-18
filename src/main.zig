@@ -3,6 +3,8 @@ const ArrayList = std.ArrayList;
 const GeneralPurposeAllocator = std.heap.GeneralPurposeAllocator;
 const getStdOut = std.io.getStdOut;
 
+const recursiveCombo = @import("./algorithm.zig").recursiveCombo;
+
 const Board = @import("./board.zig").Board;
 
 pub fn main() !void {
@@ -12,9 +14,16 @@ pub fn main() !void {
 
     var board = Board.init();
     try Board.setBoardByFile(&board, allocator, "./res/board.txt");
+    var before = try board.printBoard(allocator);
+    defer before.deinit();
+    try stdout.print("Before\n{s}", .{before.items});
 
-    var list = try board.printBoard(allocator);
-    defer list.deinit();
+    if (!recursiveCombo(&board)) {
+        try stdout.print("Failed to solve board!\n", .{});
+        return;
+    }
 
-    try stdout.print("{s}", .{list.items});
+    var after = try board.printBoard(allocator);
+    defer after.deinit();
+    try stdout.print("After\n{s}", .{after.items});
 }

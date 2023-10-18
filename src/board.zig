@@ -5,13 +5,13 @@ const OpenMode = fs.File.OpenMode;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
-const BOARD_SIZE: u32 = 9;
+pub const BOARD_SIZE: u32 = 9;
 
 const Cell = struct {
     val: u8,
     poss: [BOARD_SIZE]bool,
 
-    fn isBlank(self: *Cell) bool {
+    fn isBlank(self: *const Cell) bool {
         return self.val == 0;
     }
 };
@@ -116,14 +116,14 @@ pub const Board = struct {
                 //update row
                 for (0..BOARD_SIZE) |i| {
                     var cell = self.grid[row][i];
-                    if (cell.isBlank()) {
+                    if (!cell.isBlank()) {
                         self.grid[row][col].poss[cell.val - 1] = false;
                     }
                 }
                 //update col
                 for (0..BOARD_SIZE) |i| {
                     var cell = self.grid[i][col];
-                    if (cell.isBlank()) {
+                    if (!cell.isBlank()) {
                         self.grid[row][col].poss[cell.val - 1] = false;
                     }
                 }
@@ -134,7 +134,7 @@ pub const Board = struct {
                     const grid_row = box_row * 3 + (i / 3);
                     const grid_col = box_col * 3 + (i % 3);
                     var cell = self.grid[grid_row][grid_col];
-                    if (cell.isBlank()) {
+                    if (!cell.isBlank()) {
                         self.grid[row][col].poss[cell.val - 1] = false;
                     }
                 }
@@ -142,9 +142,9 @@ pub const Board = struct {
         }
     }
 
-    pub fn findFewestPoss(self: *Self) ?struct { u32, u32 } {
+    pub fn findFewestPoss(self: *Self) ?struct { usize, usize } {
         var smallestCount: u32 = 10;
-        var fewestSoFar = null;
+        var fewestSoFar: ?struct { usize, usize } = null;
         for (0..BOARD_SIZE) |row| {
             for (0..BOARD_SIZE) |col| {
                 const cell = self.grid[row][col];
@@ -164,14 +164,14 @@ pub const Board = struct {
     pub fn updateAffectedPoss(self: *Self, row: usize, col: usize, val: u8) void {
         //update row
         for (0..BOARD_SIZE) |i| {
-            var cell = self.grid[row][i];
+            var cell = &self.grid[row][i];
             if (cell.isBlank()) {
                 cell.poss[val - 1] = false;
             }
         }
         //update col
         for (0..BOARD_SIZE) |i| {
-            var cell = self.grid[i][col];
+            var cell = &self.grid[i][col];
             if (cell.isBlank()) {
                 cell.poss[val - 1] = false;
             }
@@ -182,7 +182,7 @@ pub const Board = struct {
         for (0..BOARD_SIZE) |i| {
             const grid_row = box_row * 3 + (i / 3);
             const grid_col = box_col * 3 + (i % 3);
-            var cell = self.grid[grid_row][grid_col];
+            var cell = &self.grid[grid_row][grid_col];
             if (cell.isBlank()) {
                 cell.poss[val - 1] = false;
             }
