@@ -7,6 +7,8 @@ const ArrayList = std.ArrayList;
 
 pub const BOARD_SIZE: u32 = 9;
 
+pub const History = struct { board: Board, guess: u8, row: usize, col: usize };
+
 const Cell = struct {
     val: u8,
     poss: [BOARD_SIZE]bool,
@@ -154,6 +156,27 @@ pub const Board = struct {
                     if (smallestCount > count) {
                         smallestCount = count;
                         fewestSoFar = .{ row, col };
+                    }
+                }
+            }
+        }
+        return fewestSoFar;
+    }
+
+    pub fn findFewestPossCount(self: *Self) ?struct { usize, usize, usize } {
+        var smallestCount: u32 = 10;
+        var fewestSoFar: ?struct { usize, usize, usize } = null;
+        for (0..BOARD_SIZE) |row| {
+            for (0..BOARD_SIZE) |col| {
+                const cell = self.grid[row][col];
+                if (cell.isBlank()) {
+                    var count: u32 = 0;
+                    inline for (cell.poss) |p| count += @intFromBool(p);
+                    if (count == 0) {
+                        return .{ row, col, 0 };
+                    } else if (smallestCount > count) {
+                        smallestCount = count;
+                        fewestSoFar = .{ row, col, count };
                     }
                 }
             }

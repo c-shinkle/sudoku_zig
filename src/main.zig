@@ -2,9 +2,7 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const GeneralPurposeAllocator = std.heap.GeneralPurposeAllocator;
 const getStdOut = std.io.getStdOut;
-
-const recursiveCombo = @import("./algorithm.zig").recursiveCombo;
-
+const algorithm = @import("./algorithm.zig");
 const Board = @import("./board.zig").Board;
 
 pub fn main() !void {
@@ -18,7 +16,7 @@ pub fn main() !void {
     defer before.deinit();
     try stdout.print("Before\n{s}", .{before.items});
 
-    if (!recursiveCombo(&board)) {
+    if (!try algorithm.interativeCombo(&board, allocator)) {
         try stdout.print("Failed to solve board!\n", .{});
         return;
     }
