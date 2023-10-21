@@ -16,9 +16,7 @@ pub fn recursiveCombo(board: *Board) bool {
 }
 
 fn helper(board: *Board) ?Board {
-    const rowCol = board.findFewestPoss() orelse return board.*;
-    const row = rowCol[0];
-    const col = rowCol[1];
+    const row, const col = board.findFewestPoss() orelse return board.*;
     for (0..BOARD_SIZE) |i| {
         if (board.grid[row][col].poss[i]) {
             var copiedBoard = board.*;
@@ -33,29 +31,27 @@ fn helper(board: *Board) ?Board {
     return null;
 }
 
-pub fn interativeCombo(board: *Board, allocator: Allocator) !bool {
-    board.setAllPoss();
-    var historyBoard = ArrayList(History).init(allocator);
-    while (board.findFewestPossCount()) |rowColCount| {
-        const count = rowColCount[2];
+pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
+    originalBoard.setAllPoss();
+    var historyStack = ArrayList(History).init(allocator);
+    while (originalBoard.findFewestPossCount()) |rowColCount| {
+        const count, const row, const col = rowColCount;
         if (count == 0) {
-            const history = historyBoard.popOrNull() orelse return false;
-            board.* = history.board;
-            board.grid[history.row][history.col].poss[history.guess - 1] = false;
+            const previous: History = historyStack.popOrNull() orelse return false;
+            originalBoard.* = previous.board;
+            originalBoard.grid[previous.row][previous.col].poss[previous.guess - 1] = false;
         } else {
-            const row = rowColCount[0];
-            const col = rowColCount[1];
-            if (position(&board.grid[row][col].poss)) |i| {
+            if (position(&originalBoard.grid[row][col].poss)) |i| {
                 const guess = i + 1;
                 const newHistory = History{
-                    .board = board.*,
+                    .board = originalBoard.*,
                     .guess = guess,
                     .row = row,
                     .col = col,
                 };
-                try historyBoard.append(newHistory);
-                board.grid[row][col].val = guess;
-                board.updateAffectedPoss(row, col, guess);
+                try historyStack.append(newHistory);
+                originalBoard.grid[row][col].val = guess;
+                originalBoard.updateAffectedPoss(row, col, guess);
             }
         }
     }
@@ -63,10 +59,9 @@ pub fn interativeCombo(board: *Board, allocator: Allocator) !bool {
 }
 
 fn position(poss: *const [BOARD_SIZE]bool) ?u8 {
-    inline for (poss, 0..) |p, i| {
+    return inline for (poss, 0..) |p, i| {
         if (p) {
-            return @truncate(i);
+            break @truncate(i);
         }
-    }
-    return null;
+    } else null;
 }

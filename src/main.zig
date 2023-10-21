@@ -16,6 +16,7 @@ pub fn main() !void {
     defer before.deinit();
     try stdout.print("Before\n{s}", .{before.items});
 
+    // if (!algorithm.recursiveCombo(&board)) {
     if (!try algorithm.interativeCombo(&board, allocator)) {
         try stdout.print("Failed to solve board!\n", .{});
         return;

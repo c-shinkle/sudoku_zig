@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 
 pub const BOARD_SIZE: u32 = 9;
 
-pub const History = struct { board: Board, guess: u8, row: usize, col: usize };
+pub const History = struct { board: Board, guess: u8, row: u32, col: u32 };
 
 const Cell = struct {
     val: u8,
@@ -144,7 +144,7 @@ pub const Board = struct {
         }
     }
 
-    pub fn findFewestPoss(self: *Self) ?struct { usize, usize } {
+    pub fn findFewestPoss(self: *Self) ?struct { u32, u32 } {
         var smallestCount: u32 = 10;
         var fewestSoFar: ?struct { usize, usize } = null;
         for (0..BOARD_SIZE) |row| {
@@ -155,7 +155,10 @@ pub const Board = struct {
                     inline for (cell.poss) |p| count += @intFromBool(p);
                     if (smallestCount > count) {
                         smallestCount = count;
-                        fewestSoFar = .{ row, col };
+                        fewestSoFar = .{
+                            @truncate(row),
+                            @truncate(col),
+                        };
                     }
                 }
             }
@@ -163,9 +166,9 @@ pub const Board = struct {
         return fewestSoFar;
     }
 
-    pub fn findFewestPossCount(self: *Self) ?struct { usize, usize, usize } {
+    pub fn findFewestPossCount(self: *Self) ?struct { u32, u32, u32 } {
         var smallestCount: u32 = 10;
-        var fewestSoFar: ?struct { usize, usize, usize } = null;
+        var fewestSoFar: ?struct { u32, u32, u32 } = null;
         for (0..BOARD_SIZE) |row| {
             for (0..BOARD_SIZE) |col| {
                 const cell = self.grid[row][col];
@@ -173,10 +176,10 @@ pub const Board = struct {
                     var count: u32 = 0;
                     inline for (cell.poss) |p| count += @intFromBool(p);
                     if (count == 0) {
-                        return .{ row, col, 0 };
+                        return .{ 0, @truncate(row), @truncate(col) };
                     } else if (smallestCount > count) {
                         smallestCount = count;
-                        fewestSoFar = .{ row, col, count };
+                        fewestSoFar = .{ count, @truncate(row), @truncate(col) };
                     }
                 }
             }
