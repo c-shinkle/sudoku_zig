@@ -3,7 +3,7 @@ const ArrayList = std.ArrayList;
 const GeneralPurposeAllocator = std.heap.GeneralPurposeAllocator;
 const getStdOut = std.io.getStdOut;
 const algorithm = @import("./algorithm.zig");
-const Board = @import("./board.zig").Board;
+const Board = @import("./Board.zig");
 
 pub fn main() !void {
     const stdout = getStdOut().writer();

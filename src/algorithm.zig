@@ -2,11 +2,10 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
-const boardModule = @import("./board.zig");
-const Cell = boardModule.Cell;
-const Board = boardModule.Board;
-const BOARD_SIZE = boardModule.BOARD_SIZE;
-const History = boardModule.History;
+const Board = @import("./Board.zig");
+const Cell = Board.Cell;
+const SIZE = Board.SIZE;
+const History = Board.History;
 
 pub fn recursiveCombo(board: *Board) bool {
     board.setAllPoss();
@@ -17,7 +16,7 @@ pub fn recursiveCombo(board: *Board) bool {
 
 fn helper(board: *Board) ?Board {
     const row, const col = board.findFewestPoss() orelse return board.*;
-    for (0..BOARD_SIZE) |i| {
+    for (0..SIZE) |i| {
         if (board.grid[row][col].poss[i]) {
             var copiedBoard = board.*;
             const guess: u8 = @as(u8, @truncate(i)) + 1;
@@ -37,7 +36,7 @@ pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
     while (originalBoard.findFewestPossCount()) |rowColCount| {
         const count, const row, const col = rowColCount;
         if (count == 0) {
-            const previous: History = historyStack.popOrNull() orelse return false;
+            const previous: History = historyStack.pop() orelse return false;
             originalBoard.* = previous.board;
             originalBoard.grid[previous.row][previous.col].poss[previous.guess - 1] = false;
         } else {
@@ -58,7 +57,7 @@ pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
     return true;
 }
 
-fn position(poss: *const [BOARD_SIZE]bool) ?u8 {
+fn position(poss: *const [SIZE]bool) ?u8 {
     return inline for (poss, 0..) |p, i| {
         if (p) {
             break @truncate(i);
