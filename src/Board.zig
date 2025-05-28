@@ -30,26 +30,24 @@ pub fn init() Board {
     return Board{ .grid = ([1][SIZE]Cell{([1]Cell{cell}) ** SIZE}) ** SIZE };
 }
 
-pub fn printBoard(self: *Board, allocator: Allocator) !ArrayList(u8) {
-    var chars = ArrayList(u8).init(allocator);
-
-    try addIthRow(self.grid[0], &chars);
-    try addIthRow(self.grid[1], &chars);
-    try addIthRow(self.grid[2], &chars);
+pub fn printBoard(self: *Board, chars: *ArrayList(u8)) ![]const u8 {
+    try addIthRow(self.grid[0], chars);
+    try addIthRow(self.grid[1], chars);
+    try addIthRow(self.grid[2], chars);
 
     try chars.appendSlice("---+---+---\n");
 
-    try addIthRow(self.grid[3], &chars);
-    try addIthRow(self.grid[4], &chars);
-    try addIthRow(self.grid[5], &chars);
+    try addIthRow(self.grid[3], chars);
+    try addIthRow(self.grid[4], chars);
+    try addIthRow(self.grid[5], chars);
 
     try chars.appendSlice("---+---+---\n");
 
-    try addIthRow(self.grid[6], &chars);
-    try addIthRow(self.grid[7], &chars);
-    try addIthRow(self.grid[8], &chars);
+    try addIthRow(self.grid[6], chars);
+    try addIthRow(self.grid[7], chars);
+    try addIthRow(self.grid[8], chars);
 
-    return chars;
+    return try chars.toOwnedSlice();
 }
 
 fn addIthRow(row: [SIZE]Cell, chars: *ArrayList(u8)) !void {
@@ -72,29 +70,7 @@ fn addIthRow(row: [SIZE]Cell, chars: *ArrayList(u8)) !void {
     try chars.append('\n');
 }
 
-pub fn setBoardByString(self: *Board, values: []const u8) void {
-    var iter = CharIterator{ .string = values };
-    for (0..SIZE) |row| {
-        for (0..SIZE) |col| {
-            const val = iter.next() orelse @panic("Should be exactly 81 chars in string slice.");
-            self.grid[row][col].val = val - '0';
-        }
-    }
-}
-
-const CharIterator = struct {
-    string: []const u8,
-    index: u32 = 0,
-    fn next(self: *CharIterator) ?u8 {
-        if (self.index >= self.string.len) {
-            return null;
-        }
-        self.index += 1;
-        return self.string[self.index - 1];
-    }
-};
-
-pub fn setBoardByFile(self: *Board, _: Allocator, path: []const u8) !void {
+pub fn setBoardByFile(self: *Board, path: []const u8) !void {
     var file_input: [90]u8 = undefined;
     const file = try std.fs.cwd().openFile(path, std.fs.File.OpenFlags{});
     const bytes_read = try file.read(&file_input);
@@ -102,20 +78,18 @@ pub fn setBoardByFile(self: *Board, _: Allocator, path: []const u8) !void {
         return error.FileTooShort;
     }
 
-    var values: [81]u8 = undefined;
     var input_index: usize = 0;
     for (0..81) |output_index| {
         const char = file_input[input_index];
         std.debug.assert(std.ascii.isDigit(char));
-        values[output_index] = char - 48;
+        self.grid[output_index / SIZE][output_index % SIZE].val = char - '0';
+
         input_index += 1;
         if (input_index % 10 == 9) {
             std.debug.assert(file_input[input_index] == '\n');
             input_index += 1;
         }
     }
-
-    self.setBoardByString(&values);
 }
 
 pub fn setAllPoss(self: *Board) void {
@@ -156,16 +130,19 @@ pub fn findFewestPoss(self: *Board) ?struct { u32, u32 } {
     for (0..SIZE) |row| {
         for (0..SIZE) |col| {
             const cell = self.grid[row][col];
-            if (cell.isBlank()) {
-                var count: u32 = 0;
-                inline for (cell.poss) |p| count += @intFromBool(p);
-                if (smallestCount > count) {
-                    smallestCount = count;
-                    fewestSoFar = .{
-                        @truncate(row),
-                        @truncate(col),
-                    };
-                }
+            if (!cell.isBlank()) continue;
+
+            var count: u32 = 0;
+            for (cell.poss) |p| {
+                count += @intFromBool(p);
+            }
+
+            if (smallestCount > count) {
+                smallestCount = count;
+                fewestSoFar = .{
+                    @truncate(row),
+                    @truncate(col),
+                };
             }
         }
     }

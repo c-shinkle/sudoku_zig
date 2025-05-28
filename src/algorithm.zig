@@ -40,8 +40,10 @@ pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
             originalBoard.* = previous.board;
             originalBoard.grid[previous.row][previous.col].poss[previous.guess - 1] = false;
         } else {
-            if (position(&originalBoard.grid[row][col].poss)) |i| {
-                const guess = i + 1;
+            for (0..SIZE) |i| {
+                if (!originalBoard.grid[row][col].poss[i]) continue;
+
+                const guess = @as(u8, @truncate(i)) + 1;
                 const newHistory = History{
                     .board = originalBoard.*,
                     .guess = guess,
@@ -55,12 +57,4 @@ pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
         }
     }
     return true;
-}
-
-fn position(poss: *const [SIZE]bool) ?u8 {
-    return inline for (poss, 0..) |p, i| {
-        if (p) {
-            break @truncate(i);
-        }
-    } else null;
 }
