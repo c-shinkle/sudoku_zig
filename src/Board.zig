@@ -3,16 +3,15 @@ const fs = std.fs;
 const cwd = fs.cwd;
 const OpenMode = fs.File.OpenMode;
 const Allocator = std.mem.Allocator;
-const ArrayList = std.ArrayList;
 
 const Board = @This();
 grid: [SIZE][SIZE]Cell,
 
 pub const SIZE: u32 = 9;
 
-pub const History = struct { board: Board, guess: u8, row: u32, col: u32 };
+pub const History = struct { board: Board, guess: u8, row: u8, col: u8 };
 
-const Cell = struct {
+pub const Cell = struct {
     val: u8,
     poss: [SIZE]bool,
 
@@ -22,52 +21,48 @@ const Cell = struct {
 };
 
 pub fn init() Board {
-    const cell = Cell{
-        .val = 0,
-        .poss = .{true} ** SIZE,
-    };
+    const cell = Cell{ .val = 0, .poss = .{true} ** SIZE };
 
     return Board{ .grid = ([1][SIZE]Cell{([1]Cell{cell}) ** SIZE}) ** SIZE };
 }
 
-pub fn printBoard(self: *Board, chars: *ArrayList(u8)) ![]const u8 {
-    try addIthRow(self.grid[0], chars);
-    try addIthRow(self.grid[1], chars);
-    try addIthRow(self.grid[2], chars);
+pub fn printBoard(self: *Board, chars: *std.ArrayListUnmanaged(u8)) void {
+    std.debug.assert(chars.capacity >= 132);
+    addIthRow(self.grid[0], chars);
+    addIthRow(self.grid[1], chars);
+    addIthRow(self.grid[2], chars);
 
-    try chars.appendSlice("---+---+---\n");
+    chars.appendSliceAssumeCapacity("---+---+---\n");
 
-    try addIthRow(self.grid[3], chars);
-    try addIthRow(self.grid[4], chars);
-    try addIthRow(self.grid[5], chars);
+    addIthRow(self.grid[3], chars);
+    addIthRow(self.grid[4], chars);
+    addIthRow(self.grid[5], chars);
 
-    try chars.appendSlice("---+---+---\n");
+    chars.appendSliceAssumeCapacity("---+---+---\n");
 
-    try addIthRow(self.grid[6], chars);
-    try addIthRow(self.grid[7], chars);
-    try addIthRow(self.grid[8], chars);
-
-    return try chars.toOwnedSlice();
+    addIthRow(self.grid[6], chars);
+    addIthRow(self.grid[7], chars);
+    addIthRow(self.grid[8], chars);
 }
 
-fn addIthRow(row: [SIZE]Cell, chars: *ArrayList(u8)) !void {
-    try chars.append(row[0].val + 48);
-    try chars.append(row[1].val + 48);
-    try chars.append(row[2].val + 48);
+fn addIthRow(row: [SIZE]Cell, chars: *std.ArrayListUnmanaged(u8)) void {
+    chars.appendAssumeCapacity(row[0].val + 48);
+    chars.appendAssumeCapacity(row[1].val + 48);
+    chars.appendAssumeCapacity(row[2].val + 48);
 
-    try chars.append('|');
+    chars.appendAssumeCapacity('|');
 
-    try chars.append(row[3].val + 48);
-    try chars.append(row[4].val + 48);
-    try chars.append(row[5].val + 48);
+    chars.appendAssumeCapacity(row[3].val + 48);
+    chars.appendAssumeCapacity(row[4].val + 48);
+    chars.appendAssumeCapacity(row[5].val + 48);
 
-    try chars.append('|');
+    chars.appendAssumeCapacity('|');
 
-    try chars.append(row[6].val + 48);
-    try chars.append(row[7].val + 48);
-    try chars.append(row[8].val + 48);
+    chars.appendAssumeCapacity(row[6].val + 48);
+    chars.appendAssumeCapacity(row[7].val + 48);
+    chars.appendAssumeCapacity(row[8].val + 48);
 
-    try chars.append('\n');
+    chars.appendAssumeCapacity('\n');
 }
 
 pub fn setBoardByFile(self: *Board, path: []const u8) !void {
@@ -97,14 +92,14 @@ pub fn setAllPoss(self: *Board) void {
         for (0..SIZE) |col| {
             //update row
             for (0..SIZE) |i| {
-                var cell = self.grid[row][i];
+                const cell = self.grid[row][i];
                 if (!cell.isBlank()) {
                     self.grid[row][col].poss[cell.val - 1] = false;
                 }
             }
             //update col
             for (0..SIZE) |i| {
-                var cell = self.grid[i][col];
+                const cell = self.grid[i][col];
                 if (!cell.isBlank()) {
                     self.grid[row][col].poss[cell.val - 1] = false;
                 }
@@ -115,7 +110,7 @@ pub fn setAllPoss(self: *Board) void {
             for (0..SIZE) |i| {
                 const grid_row = box_row * 3 + (i / 3);
                 const grid_col = box_col * 3 + (i % 3);
-                var cell = &self.grid[grid_row][grid_col];
+                const cell = &self.grid[grid_row][grid_col];
                 if (!cell.isBlank()) {
                     self.grid[row][col].poss[cell.val - 1] = false;
                 }
@@ -149,18 +144,18 @@ pub fn findFewestPoss(self: *Board) ?struct { u32, u32 } {
     return fewestSoFar;
 }
 
-pub fn findFewestPossCount(self: *Board) ?struct { u32, u32, u32 } {
-    var smallestCount: u32 = 10;
-    var fewestSoFar: ?struct { u32, u32, u32 } = null;
+pub fn findFewestPossCount(self: *Board) ?struct { u4, u4, u4 } {
+    var smallestCount: u4 = 10;
+    var fewestSoFar: ?struct { u4, u4, u4 } = null;
     for (0..SIZE) |row| {
         for (0..SIZE) |col| {
             const cell = self.grid[row][col];
             if (cell.isBlank()) {
-                var count: u32 = 0;
-                inline for (cell.poss) |p| count += @intFromBool(p);
-                if (count == 0) {
-                    return .{ 0, @truncate(row), @truncate(col) };
-                } else if (smallestCount > count) {
+                var count: u4 = 0;
+                for (cell.poss) |p| {
+                    count += @intFromBool(p);
+                }
+                if (smallestCount > count) {
                     smallestCount = count;
                     fewestSoFar = .{ count, @truncate(row), @truncate(col) };
                 }

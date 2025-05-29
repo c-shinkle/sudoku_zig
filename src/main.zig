@@ -1,32 +1,34 @@
 const std = @import("std");
-const ArrayList = std.ArrayList;
-const DebugAllocator = std.heap.DebugAllocator;
-const getStdOut = std.io.getStdOut;
 const algorithm = @import("./algorithm.zig");
 const Board = @import("./Board.zig");
 
 pub fn main() !void {
-    const stdout = getStdOut().writer();
+    // std.debug.print("History\nsize: {d}\nalign: {d}\n", .{
+    //     @sizeOf(Board.History),
+    //     @alignOf(Board.History),
+    // });
+    // std.debug.print("Cell\nsize: {d}\nalign: {d}\n", .{ @sizeOf(Board.Cell), @alignOf(Board.Cell) });
+    const stdout = std.io.getStdOut().writer();
     var board = Board.init();
     try board.setBoardByFile("./res/board.txt");
 
     var buffer: [132]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    var chars = ArrayList(u8).initCapacity(fba.allocator(), 132) catch unreachable;
+    const alloc = fba.allocator();
+    var chars = try std.ArrayListUnmanaged(u8).initCapacity(alloc, 132);
 
-    const before = board.printBoard(&chars) catch unreachable;
-    try stdout.print("Before\n{s}", .{before});
+    board.printBoard(&chars);
+    try stdout.print("Before\n{s}", .{chars.items});
 
-    var gpa = DebugAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
     // if (!algorithm.recursiveCombo(&board)) {
-    if (!try algorithm.interativeCombo(&board, allocator)) {
+    if (!algorithm.interativeCombo(&board, allocator)) {
         try stdout.print("Failed to solve board!\n", .{});
         return;
     }
 
-    fba.reset();
-    chars = ArrayList(u8).initCapacity(fba.allocator(), 132) catch unreachable;
-    const after = try board.printBoard(&chars);
-    try stdout.print("After\n{s}", .{after});
+    chars.clearRetainingCapacity();
+    board.printBoard(&chars);
+    try stdout.print("After\n{s}", .{chars.items});
 }
