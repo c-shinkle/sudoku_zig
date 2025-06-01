@@ -7,7 +7,14 @@ pub fn main() !void {
     //     @sizeOf(Board.History),
     //     @alignOf(Board.History),
     // });
-    // std.debug.print("Cell\nsize: {d}\nalign: {d}\n", .{ @sizeOf(Board.Cell), @alignOf(Board.Cell) });
+    // std.debug.print("Board\nsize: {d}\nalign: {d}\n", .{
+    //     @sizeOf(Board),
+    //     @alignOf(Board),
+    // });
+    // std.debug.print("Cell\nsize: {d}\nalign: {d}\n", .{
+    //     @sizeOf(Board.Cell),
+    //     @alignOf(Board.Cell),
+    // });
     const stdout = std.io.getStdOut().writer();
     var board = Board.init();
     try board.setBoardByFile("./res/board.txt");
