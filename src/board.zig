@@ -1,10 +1,10 @@
 const std = @import("std");
 const fs = std.fs;
-const cwd = fs.cwd;
 const OpenMode = fs.File.OpenMode;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
+// const cwd = fs.cwd;
 pub const BOARD_SIZE: u32 = 9;
 
 pub const History = struct { board: Board, guess: u8, row: u32, col: u32 };
@@ -31,8 +31,8 @@ pub const Board = struct {
         return Board{ .grid = .{.{cell} ** BOARD_SIZE} ** BOARD_SIZE };
     }
 
-    pub fn printBoard(self: *Self, allocator: Allocator) !ArrayList(u8) {
-        var chars = ArrayList(u8).init(allocator);
+    pub fn printBoard(self: *Self, allocator: Allocator) !std.array_list.Managed(u8) {
+        var chars = std.array_list.Managed(u8).init(allocator);
 
         try addIthRow(self.grid[0], &chars);
         try addIthRow(self.grid[1], &chars);
@@ -53,7 +53,7 @@ pub const Board = struct {
         return chars;
     }
 
-    fn addIthRow(row: [BOARD_SIZE]Cell, chars: *ArrayList(u8)) !void {
+    fn addIthRow(row: [BOARD_SIZE]Cell, chars: *std.array_list.Managed(u8)) !void {
         try chars.append(row[0].val + 48);
         try chars.append(row[1].val + 48);
         try chars.append(row[2].val + 48);
@@ -95,20 +95,21 @@ pub const Board = struct {
         }
     };
 
-    pub fn setBoardByFile(self: *Self, allocator: Allocator, path: []const u8) !void {
-        var file = try cwd().openFile(path, .{ .mode = OpenMode.read_only });
+    pub fn setBoardByFile(self: *Self, allocator: Allocator, sub_path: []const u8) !void {
+        var file = try std.fs.cwd().openFile(sub_path, .{ .mode = .read_only });
         defer file.close();
-        var values = ArrayList(u8).init(allocator);
+        var values = std.array_list.Managed(u8).init(allocator);
         defer values.deinit();
+        var buffer: [1024]u8 = undefined;
 
-        var reader = file.reader();
-
-        while (try reader.readUntilDelimiterOrEofAlloc(allocator, '\n', 10)) |line| {
-            if (@import("builtin").os.tag == .windows) {
-                line = std.mem.trimRight(u8, line, "\r");
-            }
+        var reader = file.reader(&buffer);
+        while (reader.interface.takeDelimiterExclusive('\n')) |line| {
             try values.appendSlice(line);
+        } else |err| switch (err) {
+            error.EndOfStream => {},
+            else => return err,
         }
+
         self.setBoardByString(values.items);
     }
 
@@ -130,8 +131,8 @@ pub const Board = struct {
                     }
                 }
                 //update box
-                var box_row = row / 3;
-                var box_col = col / 3;
+                const box_row = row / 3;
+                const box_col = col / 3;
                 for (0..BOARD_SIZE) |i| {
                     const grid_row = box_row * 3 + (i / 3);
                     const grid_col = box_col * 3 + (i % 3);
@@ -203,8 +204,8 @@ pub const Board = struct {
             }
         }
         //update box
-        var box_row = row / 3;
-        var box_col = col / 3;
+        const box_row = row / 3;
+        const box_col = col / 3;
         for (0..BOARD_SIZE) |i| {
             const grid_row = box_row * 3 + (i / 3);
             const grid_col = box_col * 3 + (i % 3);

@@ -33,11 +33,11 @@ fn helper(board: *Board) ?Board {
 
 pub fn interativeCombo(originalBoard: *Board, allocator: Allocator) !bool {
     originalBoard.setAllPoss();
-    var historyStack = ArrayList(History).init(allocator);
+    var historyStack = std.array_list.Managed(History).init(allocator);
     while (originalBoard.findFewestPossCount()) |rowColCount| {
         const count, const row, const col = rowColCount;
         if (count == 0) {
-            const previous: History = historyStack.popOrNull() orelse return false;
+            const previous: History = historyStack.pop() orelse return false;
             originalBoard.* = previous.board;
             originalBoard.grid[previous.row][previous.col].poss[previous.guess - 1] = false;
         } else {
